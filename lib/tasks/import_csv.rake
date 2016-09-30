@@ -85,9 +85,10 @@ namespace :import_csv do
 
 						# print $priority_attr.join(',')
 					nb_updated_rows += 1
-					print $priority_attr.join(',')
+					print $priority_attr
 					arr = $priority_attr
 					person.first.update_attributes(person_hash.except!(*arr))
+					$priority_attr.clear
 					else
 						add_to_array('email', p.email, person_hash['email'])
 						add_to_array('address', p.address, person_hash['address'])
@@ -99,8 +100,10 @@ namespace :import_csv do
 			   #  	p.check_attr(arr_home_phone_number, version.reify.home_phone_number, row['home_phone_number'])
 			   #  	p.check_attr(arr_mobile_phone_number, version.reify.mobile_phone_number, row['mobile_phone_number'])
 					nb_updated_rows += 1
-					print $priority_attr
+					# print $priority_attr
+					arr = $priority_attr
 					person.first.update_attributes(person_hash.except!(*arr))
+					$priority_attr.clear
 					end
 				end
 			else
