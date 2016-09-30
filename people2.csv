@@ -1,0 +1,9 @@
+reference,firstname,lastname,home_phone_number,mobile_phone_number,email,address
+1,Henri,Dupont,0123456753,06234967,hdupont@gmail.com,10 rue Layère
+2,Jean,Durand,0123336789,0663456789,j.durand@gmail.com,40 rue René Clair
+3,Luc,Marchand,0123336789,0102030405,luc.marchand@gmail.com,Paris
+4,Edouard,Durand,0123336789,0601020304,edouard.durand@gmail.com,Colombes
+10,Yvan,Oxynum,0123456789,06234988,yvan@gmail.com,33 avenue Victor Hugo
+11,Rudy,Oxynum,0123336789,0663456789,rudy@gmail.com,33 avenue Victor Hugo
+12,Thomas,Inch,0123336789,,thomas@gmail.com,46 rue René Clair
+13,Pierrick,Oxynum,0123336789,0601020304,pierrick@gmail.com,33 avenue Victor Hugo
