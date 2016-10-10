@@ -1,8 +1,11 @@
 require 'csv'
 
+# Array to store the attributes that we will note update
 $priority_attr = []
 
-# If one of the value in the array = 'true', add the attribute to $priority_attr for the update
+# If one of the values in the array = 'true', it means that the value of the attribute
+# already exists in the database for one of the versions
+# It adds the attribute to scrub to $priority_attr
 def add_attr_to_array(array, attribute)
 	if array.any?
 		$priority_attr.push(attribute)
@@ -19,112 +22,120 @@ end
 
 namespace :import_csv do
   desc "Import new persons"
-  task people: :environment do
-		nb_new_rows = 0
-		nb_updated_rows = 0
+  task :people, [:filename] => :environment do |task, args|
+  	if args.filename.blank?
+  		puts "You didn't specify any CSV file"
+  	else
+  		nb_new_rows = 0
+			nb_updated_rows = 0
 
-		CSV.foreach('people.csv', :headers => true) do |row|
+			CSV.foreach(args.filename, :headers => true) do |row|
+				person_hash = row.to_hash
+				person = Person.where(["reference = ?", person_hash['reference']])
 
-			person_hash = row.to_hash
-			person = Person.where(["reference = ?", person_hash['reference']])
+				if person.count == 1
+					person.each do |p|
+						# Check if a record has more than one version
+						if p.versions.length > 1
+							array_email = []
+							array_address = []
+							array_home_phone_number = []
+							array_mobile_phone_number = []
 
-			if person.count == 1
-				person.each do |p|
-				var = []
-					# Check if a record has more than one version
-					if p.versions.length > 1
-						arr_email = []
-						arr_address = []
-						arr_home_phone_number = []
-						arr_mobile_phone_number = []
+							# Get the latest version of a record
+							last_v = p.versions.last
+					    p.check_attr(array_email, last_v.reify.email, row['email'])
+					    p.check_attr(array_address, last_v.reify.address, row['address'])
+					    p.check_attr(array_home_phone_number, last_v.reify.home_phone_number, row['home_phone_number'])
+					    p.check_attr(array_mobile_phone_number, last_v.reify.mobile_phone_number, row['mobile_phone_number'])
 
-						# Get the latest version of a record
-						last_v = p.versions.last
-				    p.check_attr(arr_email, last_v.reify.email, row['email'])
-				    p.check_attr(arr_address, last_v.reify.address, row['address'])
-				    p.check_attr(arr_home_phone_number, last_v.reify.home_phone_number, row['home_phone_number'])
-				    p.check_attr(arr_mobile_phone_number, last_v.reify.mobile_phone_number, row['mobile_phone_number'])
+					    # Loop over all the versions of a record
+							p.versions.each do |version|
+						    unless version.reify.nil?
+						    	p.check_attr(array_email, version.reify.email, row['email'])
+						    	p.check_attr(array_address, version.reify.address, row['address'])
+						    	p.check_attr(array_home_phone_number, version.reify.home_phone_number, row['home_phone_number'])
+						    	p.check_attr(array_mobile_phone_number, version.reify.mobile_phone_number, row['mobile_phone_number'])
+						    end
+							end
+							add_attr_to_array(array_email, 'email')
+							add_attr_to_array(array_address, 'address')
+							add_attr_to_array(array_home_phone_number, 'home_phone_number')
+							add_attr_to_array(array_mobile_phone_number, 'mobile_phone_number')
 
-				    # Loop over all the versions of a record
-						p.versions.each do |version|
-					    unless version.reify.nil?
-					    	p.check_attr(arr_email, version.reify.email, row['email'])
-					    	p.check_attr(arr_address, version.reify.address, row['address'])
-					    	p.check_attr(arr_home_phone_number, version.reify.home_phone_number, row['home_phone_number'])
-					    	p.check_attr(arr_mobile_phone_number, version.reify.mobile_phone_number, row['mobile_phone_number'])
-					    end
+							print $priority_attr
+							params_to_scrub = $priority_attr
+							person.first.update_attributes(person_hash.except!(*params_to_scrub))
+							nb_updated_rows += 1
+							$priority_attr.clear
+						else
+							person.first.update_attributes(person_hash)
+							nb_updated_rows += 1
+							$priority_attr.clear
 						end
-						# puts arr_email.any?
-						# puts arr_address.any?
-						# puts arr_home_phone_number.any?
-						# puts arr_mobile_phone_number.any?
-
-						# puts add_to_array(arr_email, 'email')
-						# puts add_to_array(arr_address, 'address')
-						# puts add_to_array(arr_home_phone_number, 'home_phone_number')
-						# puts add_to_array(arr_mobile_phone_number, 'mobile_phone_number')
-
-						# if arr_email.any?
-						# 	var.push('email')
-						# end
-						# if arr_address.any?
-						# 	var.push('address')
-						# end
-						# if not arr_home_phone_number.any?
-						# 	var.push('home_phone_number')
-						# end
-						# if not arr_mobile_phone_number.any?
-						# 	var.push('mobile_phone_number')
-						# end
-
-
-						add_attr_to_array(arr_email, 'email')
-						add_attr_to_array(arr_address, 'address')
-						add_attr_to_array(arr_home_phone_number, 'home_phone_number')
-						add_attr_to_array(arr_mobile_phone_number, 'mobile_phone_number')
-
-						# print $priority_attr.join(',')
-					nb_updated_rows += 1
-					print $priority_attr
-					arr = $priority_attr
-					person.first.update_attributes(person_hash.except!(*arr))
-					$priority_attr.clear
-					else
-						add_to_array('email', p.email, person_hash['email'])
-						add_to_array('address', p.address, person_hash['address'])
-						add_to_array('home_phone_number', p.home_phone_number, person_hash['home_phone_number'])
-						add_to_array('mobile_phone_number', p.mobile_phone_number, person_hash['mobile_phone_number'])
-
-						# p.check_attr(arr_email, version.reify.email, row['email'])
-			   #  	p.check_attr(arr_address, version.reify.address, row['address'])
-			   #  	p.check_attr(arr_home_phone_number, version.reify.home_phone_number, row['home_phone_number'])
-			   #  	p.check_attr(arr_mobile_phone_number, version.reify.mobile_phone_number, row['mobile_phone_number'])
-					nb_updated_rows += 1
-					# print $priority_attr
-					arr = $priority_attr
-					person.first.update_attributes(person_hash.except!(*arr))
-					$priority_attr.clear
 					end
+				else
+					Person.create!(person_hash)
+					nb_new_rows += 1
 				end
-			else
-				puts 'Doesn\'t exists'
-				Person.create!(row.to_hash)
-				nb_new_rows += 1
 			end
-		end
-		puts 'COMPLETE'
-		puts "#{nb_new_rows} new record(s)"
-		puts "#{nb_updated_rows} record(s) updated"
+			puts 'COMPLETE'
+			puts "#{nb_new_rows} new record(s)"
+			puts "#{nb_updated_rows} record(s) updated"
+  	end
   end
 
   desc "Import new buildings"
-  task :building, [:filename] do |task, args|
+  task :buildings, [:filename] => :environment do |task, args|
   	if args.filename.blank?
   		puts "You didn't specify any CSV file"
-  		puts "#{task}"
   	else
-  		puts "#{args}"
+  		nb_new_rows = 0
+			nb_updated_rows = 0
+
+			CSV.foreach(args.filename, :headers => true) do |row|
+				building_hash = row.to_hash
+				building = Building.where(["reference = ?", building_hash['reference']])
+
+				if building.count == 1
+					building.each do |b|
+						# Check if a record has more than one version
+						if b.versions.length > 1
+							array_manager_name = []
+
+							# Get the latest version of a record
+							last_v = p.versions.last
+					    b.check_attr(array_manager_name, last_v.reify.manager_name, row['manager_name'])
+
+					    # Loop over all the versions of a record
+							b.versions.each do |version|
+						    unless version.reify.nil?
+						    	b.check_attr(array_manager_name, version.reify.manager_name, row['manager_name'])
+						    end
+							end
+							add_attr_to_array(array_manager_name, 'manager_name')
+
+							print $priority_attr
+							params_to_scrub = $priority_attr
+							building.first.update_attributes(building_hash.except!(*params_to_scrub))
+							nb_updated_rows += 1
+							$priority_attr.clear
+						else
+							building.first.update_attributes(building_hash)
+							nb_updated_rows += 1
+							$priority_attr.clear
+						end
+					end
+				else
+					Building.create!(building_hash)
+					nb_new_rows += 1
+				end
+			end
+			puts 'COMPLETE'
+			puts "#{nb_new_rows} new record(s)"
+			puts "#{nb_updated_rows} record(s) updated"
   	end
   end
+
 
 end
