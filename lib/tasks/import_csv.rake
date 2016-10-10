@@ -137,5 +137,60 @@ namespace :import_csv do
   	end
   end
 
+  desc "Import any kind of data"
+  task :peoples, [:filename, :ids, :type] =>  :environment do |task, args|
+  	if args.filename.blank?
+  		puts "You didn't specify any CSV file"
+  	elsif args.ids.blank?
+  		puts "You didn't specify any attributes for the priority update"
+  	else
+  		nb_new_rows = 0
+			nb_updated_rows = 0
+			ids = args[:ids].split ' '
+			classname = args.type.constantize
+
+			CSV.foreach(args.filename, :headers => true) do |row|
+				person_hash = row.to_hash
+				person = classname.where(["reference = ?", person_hash['reference']])
+
+				if person.count == 1
+					person.each do |p|
+						# Check if a record has more than one version
+						if p.versions.length > 1
+							my_array = []
+							ids.each do |id|
+								# Get the latest version of a record
+								last_v = p.versions.last
+						    p.check_attr(my_array, last_v.reify[id], row[id])
+
+						    # Loop over all the versions of a record
+								p.versions.each do |version|
+							    unless version.reify.nil?
+							    	p.check_attr(my_array, version.reify[id], row[id])
+							    end
+								end
+								add_attr_to_array(my_array, id)
+								my_array.clear
+						  end
+								print $priority_attr
+								params_to_scrub = $priority_attr
+								person.first.update_attributes(person_hash.except!(*params_to_scrub))
+								nb_updated_rows += 1
+								$priority_attr.clear
+						else
+							person.first.update_attributes(person_hash)
+							nb_updated_rows += 1
+						end
+					end
+				else
+					classname.create!(row.to_hash)
+					nb_new_rows += 1
+				end
+			end
+			puts 'COMPLETE'
+			puts "#{nb_new_rows} new record(s)"
+			puts "#{nb_updated_rows} record(s) updated"
+  	end	
+  end
 
 end
