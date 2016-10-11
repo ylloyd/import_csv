@@ -12,14 +12,6 @@ def add_attr_to_array(array, attribute)
 	end
 end
 
-# Method to check if the current record attribute matches the csv value
-def add_to_array(field_name, current_value, csv_value)
-	if not current_value == csv_value
-		$priority_attr.push(field_name)
-	end
-end
-
-
 namespace :import_csv do
   desc "Import new persons"
   task :people, [:filename] => :environment do |task, args|
@@ -63,7 +55,7 @@ namespace :import_csv do
 							add_attr_to_array(array_home_phone_number, 'home_phone_number')
 							add_attr_to_array(array_mobile_phone_number, 'mobile_phone_number')
 
-							print $priority_attr
+							# print $priority_attr
 							params_to_scrub = $priority_attr
 							person.first.update_attributes(person_hash.except!(*params_to_scrub))
 							nb_updated_rows += 1
@@ -115,7 +107,7 @@ namespace :import_csv do
 							end
 							add_attr_to_array(array_manager_name, 'manager_name')
 
-							print $priority_attr
+							# print $priority_attr
 							params_to_scrub = $priority_attr
 							building.first.update_attributes(building_hash.except!(*params_to_scrub))
 							nb_updated_rows += 1
@@ -138,52 +130,52 @@ namespace :import_csv do
   end
 
   desc "Import any kind of data"
-  task :peoples, [:filename, :ids, :type] =>  :environment do |task, args|
+  task :any, [:type_of_data, :attributes_to_scrub, :filename] =>  :environment do |task, args|
   	if args.filename.blank?
   		puts "You didn't specify any CSV file"
-  	elsif args.ids.blank?
+  	elsif args.attributes_to_scrub.blank?
   		puts "You didn't specify any attributes for the priority update"
   	else
   		nb_new_rows = 0
 			nb_updated_rows = 0
-			ids = args[:ids].split ' '
-			classname = args.type.constantize
+			attributes_to_scrub = args[:attributes_to_scrub].split ' '
+			classname = args.type_of_data.constantize
 
 			CSV.foreach(args.filename, :headers => true) do |row|
-				person_hash = row.to_hash
-				person = classname.where(["reference = ?", person_hash['reference']])
+				query_hash = row.to_hash
+				query = classname.where(["reference = ?", query_hash['reference']])
 
-				if person.count == 1
-					person.each do |p|
+				if query.count == 1
+					query.each do |q|
 						# Check if a record has more than one version
-						if p.versions.length > 1
+						if q.versions.length > 1
 							my_array = []
-							ids.each do |id|
+							attributes_to_scrub.each do |attribute|
 								# Get the latest version of a record
-								last_v = p.versions.last
-						    p.check_attr(my_array, last_v.reify[id], row[id])
+								last_v = q.versions.last
+						    q.check_attr(my_array, last_v.reify[attribute], row[attribute])
 
 						    # Loop over all the versions of a record
-								p.versions.each do |version|
+								q.versions.each do |version|
 							    unless version.reify.nil?
-							    	p.check_attr(my_array, version.reify[id], row[id])
+							    	q.check_attr(my_array, version.reify[attribute], row[attribute])
 							    end
 								end
-								add_attr_to_array(my_array, id)
+								add_attr_to_array(my_array, attribute)
 								my_array.clear
 						  end
-								print $priority_attr
+								# print $priority_attr
 								params_to_scrub = $priority_attr
-								person.first.update_attributes(person_hash.except!(*params_to_scrub))
+								query.first.update_attributes(query_hash.except!(*params_to_scrub))
 								nb_updated_rows += 1
 								$priority_attr.clear
 						else
-							person.first.update_attributes(person_hash)
+							query.first.update_attributes(query_hash)
 							nb_updated_rows += 1
 						end
 					end
 				else
-					classname.create!(row.to_hash)
+					classname.create!(query_hash)
 					nb_new_rows += 1
 				end
 			end
