@@ -2,11 +2,4 @@ reference,firstname,lastname,home_phone_number,mobile_phone_number,email,address
 1,Henri,Dupont,0123456789,06234988,h.dupont@gmail.com,10 rue Layère
 2,Jean,Durand,0123336789,0663456789,jdurand@gmail.com,40 rue René Clair
 3,Luc,Marchand,0123336789,0102030405,luc.marchand@gmail.com,Paris
-4,Edouard,Durand,0123336789,0601020304,edouard.durand@gmail.com,test addres
-5,Edouardo,Durand,0123336789,0601020304,edouard.durand@gmail.com,test
-6,Edouardo,Durand,012333678,0601020304,edouardo.durand@gmail.com,colombesaaa
-7,Philippe,Chantel,012333628,0601020334,ph.chantel@gmail.com,Lyon
-8,Yannick,Ribas,012333628,0601020334,y.ribas@gmail.com,Lyon
-9,Stéphane,Blair,012333628,0601020334,stephane.blair@gmail.com,Montepellier
-10,Brigitte,Véron,012333628,0601020334,b.veron@gmail.com,Paris
-11,Benoit,Véron,012333628,0601020334,beno.veron@gmail.com,Toulouse
+4,Edouard,Durand,0123336789,0601020304,edouard.durand@gmail.com,Nice
