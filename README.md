@@ -1,5 +1,6 @@
 # Import CSV files
 This app executes different tasks allowing to import CSV files.
+
 You can find the tasks in lib/tasks/import_csv.rake.
 
 ## Clone the project
